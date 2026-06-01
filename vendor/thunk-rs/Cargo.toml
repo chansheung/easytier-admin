@@ -1,0 +1,11 @@
+[package]
+name = "thunk-rs"
+version = "0.3.5"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[features]
+default = []
+win7 = []

@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyTier 管理后台</title>
+<style>
+:root {
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f0f0f0;
+  --bg-overlay: rgba(0,0,0,0.4);
+  --border-color: #ddd;
+  --border-light: #ccc;
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-muted: #999;
+  --accent-blue: #1a73e8;
+  --accent-green: #34a853;
+  --accent-red: #ea4335;
+  --accent-orange: #d29922;
+  --accent-purple: #7c3aed;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --radius: 6px;
+  --radius-lg: 10px;
+  --transition: 150ms ease;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Login ─────────────────────────────── */
+#login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.login-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: var(--card-shadow);
+}
+
+.login-card h1 {
+  text-align: center;
+  margin-bottom: 8px;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.login-card p.subtitle {
+  text-align: center;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+  font-size: 14px;
+}
+
+.form-group { margin-bottom: 16px; }
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.form-group input:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+}
+
+.login-error {
+  background: rgba(234,67,53,0.08);
+  border: 1px solid rgba(234,67,53,0.2);
+  color: var(--accent-red);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-light);
+}
+
+.btn-primary {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #1565c0;
+}
+
+.btn-danger {
+  background: rgba(234,67,53,0.08);
+  border-color: rgba(234,67,53,0.3);
+  color: var(--accent-red);
+}
+
+.btn-danger:hover {
+  background: rgba(234,67,53,0.15);
+}
+
+.btn-success {
+  background: rgba(52,168,83,0.08);
+  border-color: rgba(52,168,83,0.3);
+  color: var(--accent-green);
+}
+
+.btn-success:hover {
+  background: rgba(52,168,83,0.15);
+}
+
+.btn-block { width: 100%; }
+
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+/* ── App Layout ────────────────────────── */
+#app-page { display: none; min-height: 100vh; }
+
+.top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  background: #fff;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 100;
+}
+
+.top-nav h1 {
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.top-nav .user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.sidebar {
+  position: fixed;
+  top: 52px;
+  left: 0;
+  bottom: 0;
+  width: 220px;
+  background: #ffffff;
+  border-right: 1px solid var(--border-color);
+  padding: 16px 0;
+  overflow-y: auto;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all var(--transition);
+  user-select: none;
+}
+
+.sidebar-item:hover {
+  color: var(--text-primary);
+  background: #f8f9fa;
+}
+
+.sidebar-item.active {
+  color: var(--accent-blue);
+  background: #e8f0fe;
+  border-left-color: var(--accent-blue);
+}
+
+.sidebar-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+.main-content {
+  margin-left: 220px;
+  margin-top: 52px;
+  padding: 24px;
+  min-height: calc(100vh - 52px);
+  background: #f5f5f5;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Stat Cards ────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: border-color var(--transition);
+}
+
+.stat-card:hover { border-color: var(--border-light); }
+
+.stat-card .label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.stat-card .value {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.stat-card .value.blue { color: var(--accent-blue); }
+.stat-card .value.green { color: var(--accent-green); }
+.stat-card .value.red { color: var(--accent-red); }
+
+/* ── Tables ────────────────────────────── */
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.panel-header h2 { font-size: 18px; font-weight: 600; }
+
+.table-wrap {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead { background: #f0f0f0; }
+
+th {
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+tr:last-child td { border-bottom: none; }
+
+tr:hover td { background: rgba(26,115,232,0.03); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-green { background: rgba(52,168,83,0.1); color: var(--accent-green); }
+.badge-red { background: rgba(234,67,53,0.1); color: var(--accent-red); }
+.badge-orange { background: rgba(210,153,34,0.1); color: var(--accent-orange); }
+.badge-blue { background: rgba(26,115,232,0.1); color: var(--accent-blue); }
+.badge-gray { background: rgba(0,0,0,0.06); color: var(--text-secondary); }
+
+.mono { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; font-size: 12px; }
+
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ── Modal ─────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+
+.modal h3 {
+  font-size: 16px;
+  margin-bottom: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal .form-group { margin-bottom: 14px; }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/* ── Prompt (inline block reason) ──────── */
+.inline-prompt {
+  display: none;
+  position: fixed;
+  z-index: 210;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  width: 280px;
+}
+
+.inline-prompt.open { display: block; }
+
+.inline-prompt label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
+.inline-prompt input {
+  width: 100%;
+  padding: 6px 10px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  margin-bottom: 10px;
+}
+
+.inline-prompt input:focus { border-color: var(--accent-blue); }
+
+.inline-prompt .prompt-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* ── Toast ─────────────────────────────── */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 300;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+}
+
+.toast {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  animation: toastIn 0.2s ease;
+  max-width: 340px;
+  color: var(--text-primary);
+}
+
+.toast.success { border-left: 3px solid var(--accent-green); }
+.toast.error { border-left: 3px solid var(--accent-red); }
+
+@keyframes toastIn {
+  from { opacity:0; transform: translateY(10px); }
+  to { opacity:1; transform: translateY(0); }
+}
+
+/* ── Loading Spinner ───────────────────── */
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent-blue);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-row td { text-align: center; padding: 32px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════ Login Page ═══════ -->
+<div id="login-page">
+  <div class="login-card">
+    <h1>EasyTier 管理后台</h1>
+    <p class="subtitle">登录管理您的网络</p>
+    <div class="login-error" id="login-error"></div>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="login-user">用户名</label>
+        <input type="text" id="login-user" autocomplete="username" required autofocus>
+      </div>
+      <div class="form-group">
+        <label for="login-pass">密码</label>
+        <input type="password" id="login-pass" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="login-btn">登录</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════ App Page ═══════ -->
+<div id="app-page">
+  <nav class="top-nav">
+    <h1><span>🌐</span> EasyTier 管理后台</h1>
+    <div class="user-info">
+      <span id="nav-username"></span>
+      <button class="btn btn-sm" id="logout-btn">退出登录</button>
+    </div>
+  </nav>
+
+  <aside class="sidebar">
+    <div class="sidebar-item active" data-tab="ipwhitelist">
+      <span class="icon">🛡️</span> IP 白名单
+    </div>
+    <div class="sidebar-item" data-tab="devices">
+      <span class="icon">💻</span> 设备
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <!-- IP Whitelist Tab -->
+    <div class="tab-panel active" id="tab-ipwhitelist">
+      <div class="panel-header">
+        <h2>IP 白名单</h2>
+        <button class="btn btn-sm btn-primary" id="create-whitelist-btn">＋ 添加 IP</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>IP 地址</th>
+              <th>备注</th>
+              <th>主机名</th>
+              <th>创建时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="whitelist-tbody">
+            <tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Devices Tab -->
+    <div class="tab-panel" id="tab-devices">
+      <div class="panel-header">
+        <h2>已连接设备</h2>
+        <button class="btn btn-sm" id="refresh-devices">刷新</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>机器 ID</th>
+              <th>主机名</th>
+              <th>虚拟 IP</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody id="devices-tbody">
+            <tr class="loading-row"><td colspan="4"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+
+<!-- ═══════ Create Whitelist Modal ═══════ -->
+<div class="modal-overlay" id="whitelist-modal">
+  <div class="modal">
+    <h3>添加白名单 IP</h3>
+    <div class="form-group">
+      <label>IP 地址</label>
+      <input type="text" id="whitelist-ip" placeholder="如 10.0.10.2">
+    </div>
+    <div class="form-group">
+      <label>备注</label>
+      <input type="text" id="whitelist-comment" placeholder="如：张三的笔记本">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="whitelist-cancel">取消</button>
+      <button class="btn btn-primary" id="whitelist-submit">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ Toast Container ═══════ -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+(function() {
+  "use strict";
+
+  var API_BASE = window.API_BASE || "";
+
+  function $(sel) { return document.querySelector(sel); }
+  function $$(sel) { return document.querySelectorAll(sel); }
+
+  var token = localStorage.getItem("admin_token");
+  var username = localStorage.getItem("admin_username");
+
+  function init() {
+    if (token && username) {
+      showApp();
+    } else {
+      showLogin();
+    }
+  }
+
+  function showLogin() {
+    $("#login-page").style.display = "flex";
+    $("#app-page").style.display = "none";
+  }
+
+  function showApp() {
+    $("#login-page").style.display = "none";
+    $("#app-page").style.display = "block";
+    $("#nav-username").textContent = username;
+    loadWhitelist();
+  }
+
+  function api(method, path, body) {
+    var headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = "Bearer " + token;
+    var opts = { method: method, headers: headers };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    return fetch(API_BASE + path, opts).then(function(res) {
+      if (res.status === 401) {
+        doLogout();
+        throw new Error("会话已过期");
+      }
+      return res.json().then(function(data) {
+        if (!res.ok) throw new Error(data.error || data.message || "Request failed");
+        return data;
+      });
+    });
+  }
+
+  function toast(msg, type) {
+    var el = document.createElement("div");
+    el.className = "toast " + (type || "");
+    el.textContent = msg;
+    $("#toast-container").appendChild(el);
+    setTimeout(function() { el.remove(); }, 4000);
+  }
+
+  function escapeHtml(s) {
+    if (s == null) return "";
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function ipCompare(a, b) {
+    var aEmpty = !a;
+    var bEmpty = !b;
+    if (aEmpty && bEmpty) return 0;
+    if (aEmpty) return 1;
+    if (bEmpty) return -1;
+    var aParts = String(a).split(".");
+    var bParts = String(b).split(".");
+    for (var i = 0; i < 4; i++) {
+      var an = parseInt(aParts[i] || "0", 10);
+      var bn = parseInt(bParts[i] || "0", 10);
+      if (an !== bn) return an - bn;
+    }
+    return 0;
+  }
+
+  function timeAgo(ts) {
+    if (!ts) return "—";
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return escapeHtml(ts);
+    var now = Date.now();
+    var diff = now - d.getTime();
+    if (diff < 60000) return "刚刚";
+    if (diff < 3600000) return Math.floor(diff/60000) + "分钟前";
+    if (diff < 86400000) return Math.floor(diff/3600000) + "小时前";
+    var fmt = new Intl.DateTimeFormat('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    return fmt.format(d);
+  }
+
+  function formatTime(ts) {
+    if (!ts) return "—";
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return escapeHtml(ts);
+    var fmt = new Intl.DateTimeFormat('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    return fmt.format(d);
+  }
+
+  function statusBadge(status) {
+    var s = String(status || "unknown").toLowerCase();
+    if (s === "active" || s === "online") return '<span class="badge badge-green">在线</span>';
+    if (s === "blocked") return '<span class="badge badge-red">已封禁</span>';
+    if (s === "inactive" || s === "offline") return '<span class="badge badge-gray">离线</span>';
+    if (s === "expired") return '<span class="badge badge-orange">已过期</span>';
+    if (s === "revoked") return '<span class="badge badge-red">已撤销</span>';
+    if (s === "valid") return '<span class="badge badge-green">有效</span>';
+    return '<span class="badge badge-gray">' + escapeHtml(status) + '</span>';
+  }
+
+  // ── Login ──────────────────────────
+  $("#login-form").addEventListener("submit", function(e) {
+    e.preventDefault();
+    var u = $("#login-user").value.trim();
+    var p = $("#login-pass").value;
+    if (!u || !p) return;
+    var errEl = $("#login-error");
+    errEl.style.display = "none";
+    var btn = $("#login-btn");
+    btn.disabled = true;
+    btn.textContent = "登录中...";
+    api("POST", "/api/v1/admin/login", { username: u, password: p })
+      .then(function(data) {
+        token = data.token;
+        username = data.username || u;
+        localStorage.setItem("admin_token", token);
+        localStorage.setItem("admin_username", username);
+        showApp();
+      })
+      .catch(function(err) {
+        errEl.textContent = err.message || "登录失败";
+        errEl.style.display = "block";
+      })
+      .finally(function() {
+        btn.disabled = false;
+        btn.textContent = "登录";
+      });
+  });
+
+  // ── Logout ─────────────────────────
+  function doLogout() {
+    token = null;
+    username = null;
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_username");
+    showLogin();
+  }
+  $("#logout-btn").addEventListener("click", doLogout);
+
+  // ── Tabs ───────────────────────────
+  $$(".sidebar-item").forEach(function(item) {
+    item.addEventListener("click", function() {
+      $$(".sidebar-item").forEach(function(i) { i.classList.remove("active"); });
+      item.classList.add("active");
+      $$(".tab-panel").forEach(function(p) { p.classList.remove("active"); });
+      var tab = item.getAttribute("data-tab");
+      $("#tab-" + tab).classList.add("active");
+      if (tab === "devices") loadDevices();
+      else if (tab === "ipwhitelist") loadWhitelist();
+    });
+  });
+
+  // ── Devices ────────────────────────
+  function loadDevices() {
+    var tbody = $("#devices-tbody");
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="4"><div class="spinner"></div></td></tr>';
+    Promise.all([
+      api("GET", "/api/v1/admin/devices").catch(function() { return {devices: []}; }),
+      api("GET", "/api/v1/admin/peers").catch(function() { return {peers: []}; })
+    ]).then(function(results) {
+      var devices = results[0].devices || [];
+      var peers = results[1].peers || [];
+      peers.forEach(function(p) {
+        devices.push({
+          machine_id: "P2P-" + p.peer_id,
+          hostname: p.hostname || "",
+          ip: p.ip || "",
+          os: "",
+          version: "",
+          last_seen: null,
+          blocked: false,
+          is_peer: true
+        });
+      });
+      devices.sort(function(a, b) { return ipCompare(a.ip, b.ip); });
+      if (!Array.isArray(devices) || devices.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-state">暂无设备</td></tr>';
+        return;
+      }
+      var html = "";
+      devices.forEach(function(d) {
+        var isBlocked = d.blocked === true;
+        var statusHtml = isBlocked ? statusBadge("blocked") : statusBadge("active");
+        html += "<tr>"
+          + '<td class="mono">' + escapeHtml(d.machine_id) + '</td>'
+          + "<td>" + escapeHtml(d.hostname) + "</td>"
+          + '<td class="mono">' + escapeHtml(d.ip) + "</td>"
+          + "<td>" + statusHtml + "</td>"
+          + "</tr>";
+      });
+      tbody.innerHTML = html;
+    }).catch(function(err) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">' + escapeHtml(err.message) + '</td></tr>';
+    });
+  }
+  $("#refresh-devices").addEventListener("click", loadDevices);
+
+  // ── IP Whitelist ──────────────────
+  function loadWhitelist() {
+    var tbody = $("#whitelist-tbody");
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+    api("GET", "/api/v1/admin/ipwhitelist")
+      .then(function(data) {
+        var list = data.entries || data || [];
+        if (!Array.isArray(list) || list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty-state">暂无白名单条目</td></tr>';
+          return;
+        }
+        list.sort(function(a, b) { return ipCompare(a.ip, b.ip); });
+        var html = "";
+        list.forEach(function(e) {
+          var hostname = e.hostname || "";
+          var actionHtml = '<button class="btn btn-sm btn-danger" data-action="delete-whitelist" data-wid="' + escapeHtml(e.id) + '">删除</button>';
+          if (hostname) {
+            actionHtml += ' <button class="btn btn-sm btn-success" data-action="unbind-whitelist" data-wid="' + escapeHtml(e.id) + '">解绑</button>';
+          }
+          html += "<tr>"
+            + '<td class="mono">' + escapeHtml(e.ip) + "</td>"
+            + "<td>" + escapeHtml(e.comment || "") + "</td>"
+            + "<td>" + escapeHtml(hostname || "—") + "</td>"
+            + "<td>" + formatTime(e.created_at) + "</td>"
+            + "<td>" + actionHtml + "</td>"
+            + "</tr>"
+        });
+        tbody.innerHTML = html;
+      })
+      .catch(function(err) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">' + escapeHtml(err.message) + '</td></tr>';
+      });
+  }
+
+  document.addEventListener("click", function(e) {
+    var delBtn = e.target.closest("button[data-action='delete-whitelist']");
+    if (delBtn) {
+      var wid = delBtn.getAttribute("data-wid");
+      if (!confirm("确定要删除此 IP 白名单条目吗？")) return;
+      delBtn.disabled = true;
+      api("POST", "/api/v1/admin/ipwhitelist/delete", { id: parseInt(wid, 10) })
+        .then(function() {
+          toast("白名单条目已删除", "success");
+          loadWhitelist();
+        })
+        .catch(function(err) { toast(err.message, "error"); delBtn.disabled = false; });
+      return;
+    }
+    var unbindBtn = e.target.closest("button[data-action='unbind-whitelist']");
+    if (unbindBtn) {
+      var uid = unbindBtn.getAttribute("data-wid");
+      if (!confirm("确定要解绑此条目的主机名吗？")) return;
+      unbindBtn.disabled = true;
+      api("POST", "/api/v1/admin/ipwhitelist/unbind", { id: parseInt(uid, 10) })
+        .then(function() {
+          toast("主机名已解绑", "success");
+          loadWhitelist();
+        })
+        .catch(function(err) { toast(err.message, "error"); unbindBtn.disabled = false; });
+      return;
+    }
+  });
+
+  $("#create-whitelist-btn").addEventListener("click", function() {
+    $("#whitelist-ip").value = "";
+    $("#whitelist-comment").value = "";
+    $("#whitelist-modal").classList.add("open");
+    $("#whitelist-ip").focus();
+  });
+
+  $("#whitelist-cancel").addEventListener("click", function() {
+    $("#whitelist-modal").classList.remove("open");
+  });
+
+  $("#whitelist-modal").addEventListener("click", function(e) {
+    if (e.target === this) this.classList.remove("open");
+  });
+
+  $("#whitelist-submit").addEventListener("click", function() {
+    var ip = $("#whitelist-ip").value.trim();
+    var comment = $("#whitelist-comment").value.trim();
+    if (!ip) { $("#whitelist-ip").focus(); return; }
+    var btn = this;
+    btn.disabled = true;
+    api("POST", "/api/v1/admin/ipwhitelist/create", { ip: ip, comment: comment || null })
+      .then(function() {
+        toast("白名单条目已添加", "success");
+        $("#whitelist-modal").classList.remove("open");
+        loadWhitelist();
+      })
+      .catch(function(err) { toast(err.message, "error"); })
+      .finally(function() { btn.disabled = false; });
+  });
+  // ── Init ───────────────────────────
+  init();
+
+})();
+</script>
+</body>
+</html>

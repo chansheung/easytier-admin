@@ -1,0 +1,36 @@
+[workspace]
+resolver = "2"
+members = [
+    "easytier",
+    "easytier-gui/src-tauri",
+    "easytier-rpc-build",
+    "easytier-web",
+    "easytier-contrib/easytier-ffi",
+    "easytier-contrib/easytier-uptime",
+    "easytier-contrib/easytier-android-jni",
+]
+default-members = ["easytier", "easytier-web"]
+exclude = [
+    "easytier-contrib/easytier-ohrs", # it needs ohrs sdk
+]
+
+[profile.dev]
+panic = "unwind"
+debug = 2
+
+[profile.release]
+panic = "abort"
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true
+
+[patch."https://github.com/EasyTier/http_req.git"]
+http_req = { path = "vendor/http_req" }
+
+[patch."https://github.com/easytier/thunk.git"]
+thunk-rs = { path = "vendor/thunk-rs" }
+
+[patch."https://github.com/EasyTier/kcp-sys"]
+kcp-sys = { path = "vendor/kcp-sys" }
+
