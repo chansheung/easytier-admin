@@ -184,6 +184,129 @@ private_mode = true
 
 启动后访问 Admin UI：`http://<your-server-ip>:11211/admin`
 
+## Agent 节点部署
+
+### 用途
+对于"半中心化"部署：在关键内网服务器上部署 agent 容器，由 admin 统一管控 IP 白名单。即使该服务器有公网 IP，也只允许 admin 授权的设备访问。
+
+### 与 admin 的关系
+- admin 部署在云端（或公网可达的服务器），运行 `easytier-web`
+- agent 部署在内网关键服务器上，运行 `easytier-core` + `easytier-whitelist-sync`
+- agent 从 admin 拉取白名单，本地阻断白名单外的设备
+
+### 虚拟 IP 命名约定
+**admin 必须使用 `.1` 后缀**，agent 使用其他后缀：
+
+| 角色 | 虚拟 IP | 说明 |
+|------|---------|------|
+| admin | `10.0.10.1/24` | 固定为子网的 `.1` |
+| agent #1 | `10.0.10.2/24` | 内网服务器 1 |
+| agent #2 | `10.0.10.3/24` | 内网服务器 2 |
+| 普通客户端 | `10.0.10.x` | 其他设备 |
+
+agent 启动时会从自己的 `core.toml` 读取 `ipv4` 字段（如 `10.0.10.2/24`），自动取前三段（`10.0.10`）拼上 `.1` → 得到 admin 的默认 IP（`10.0.10.1`），写入默认白名单。
+
+### agent 端 core.toml 示例
+
+```toml
+ipv4 = "10.0.10.2/24"
+listeners = [
+    "tcp://0.0.0.0:22022",
+    "udp://0.0.0.0:22022",
+]
+
+[network_identity]
+network_name = "cph"
+network_secret = "admincph"
+
+[[peer]]
+uri = "tcp://<admin公网IP>:22022"
+
+[flags]
+private_mode = true
+```
+
+字段说明：
+- `ipv4`：agent 自己的虚拟 IP，**必须与 admin 同子网**，且不能是 `.1`
+- `[[peer]]`：admin 的公网/内网 IP + easytier 端口（默认 22022）
+- 其余字段同 admin 端
+
+### 白名单同步机制
+
+agent 启动流程：
+
+```
+1. 读取 core.toml 的 ipv4 → 自动算出 admin 默认 IP（.1 后缀）
+2. 写入 /data/ip_whitelist.json 作为预置白名单
+3. 启动 whitelist-sync-daemon（向 admin 拉取真实白名单）
+4. 启动 easytier-core
+5. core 每 30s 检测白名单 + 阻断非白名单设备
+6. sync-daemon 每 30s 拉取 admin 白名单覆盖本地文件
+```
+
+**关键设计：预置默认值**
+- agent 第一次启动时，`ip_whitelist.json` 不存在
+- 入口脚本自动写入 `[{ip: "<admin虚拟IP>", hostname: null}]` 作为兜底
+- 这样 core 不会阻断 admin，P2P 连接能立即建立
+- sync-daemon 第一次拉取成功后，会用 admin 真实白名单覆盖默认值
+
+**admin 失联时的行为**
+- sync-daemon 检测到 admin 不可达 → **不修改本地白名单文件**
+- core 继续使用最后一次同步成功的白名单
+- 安全性不降低（不会因为 admin 失联而放行新设备）
+
+### 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `WHITELIST_SYNC_URL` | （必填）| admin 公开白名单端点，如 `http://10.0.10.1:11211/api/v1/public/whitelist.json` |
+| `IP_WHITELIST_FILE` | `/data/ip_whitelist.json` | 本地白名单文件路径 |
+| `WHITELIST_SYNC_INTERVAL` | `30` | 拉取间隔（秒）|
+| `WHITELIST_DEFAULT_IPS` | 自动检测 | 预置白名单的 IP 列表（逗号分隔），默认从 core.toml 自动算 admin 的 `.1` 后缀 |
+| `CORE_CONFIG` | `/etc/easytier/core.toml` | core 配置文件路径 |
+
+### 构建与启动
+
+```bash
+# 1. 构建 agent 镜像
+docker build -t easytier-agent:latest -f agent.Dockerfile .
+
+# 2. 准备 core.toml（见上节示例）
+
+# 3. 启动 agent 容器
+docker run -d \
+  --name easytier-agent \
+  --restart unless-stopped \
+  --network host \
+  --cap-add NET_ADMIN \
+  --device /dev/net/tun \
+  -v /opt/easytier-agent/config/core.toml:/etc/easytier/core.toml:ro \
+  -v easytier-agent-data:/data \
+  -e WHITELIST_SYNC_URL=http://10.0.10.1:11211/api/v1/public/whitelist.json \
+  -e WHITELIST_SYNC_INTERVAL=30 \
+  easytier-agent:latest
+
+# 4. 验证
+docker logs -f easytier-agent
+# 应看到：
+#   [agent] auto-detected admin IP from core.toml: 10.0.10.1 (agent=10.0.10.2)
+#   [agent] initializing default whitelist (kills chicken-and-egg)
+#   [agent] default whitelist: [{"ip":"10.0.10.1","hostname":null}]
+#   whitelist-sync-daemon starting: ...
+#   Whitelist synced: N entries
+```
+
+### 重新生成默认白名单
+
+如果需要重新触发默认白名单逻辑（例如网络重命名），删除数据卷：
+
+```bash
+docker stop easytier-agent
+docker rm easytier-agent
+docker volume rm easytier-agent-data
+# 然后重新 docker run
+```
+
 ## 一键脚本
 
 仓库根目录提供 `build-and-run.sh`（Linux amd64），支持一键构建并启动容器：

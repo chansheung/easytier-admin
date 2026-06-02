@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  easytier-agent:
+    build:
+      context: .
+      dockerfile: agent.Dockerfile
+    container_name: easytier-agent
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    volumes:
+      - ./config/core.toml:/etc/easytier/core.toml:ro
+      - agent-data:/data
+    environment:
+      - WHITELIST_SYNC_URL=http://10.0.10.1:11211/api/v1/public/whitelist.json
+      - IP_WHITELIST_FILE=/data/ip_whitelist.json
+      - WHITELIST_SYNC_INTERVAL=30
+      - RUST_LOG=info
+      - TZ=Asia/Shanghai
+
+volumes:
+  agent-data:

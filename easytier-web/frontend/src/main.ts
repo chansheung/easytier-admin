@@ -14,6 +14,7 @@ import Login from './components/Login.vue'
 import DeviceList from './components/DeviceList.vue'
 import DeviceManagement from './components/DeviceManagement.vue'
 import IpWhitelist from './components/IpWhitelist.vue'
+import Agents from './components/Agents.vue'
 import DialogService from 'primevue/dialogservice';
 import ToastService from 'primevue/toastservice';
 import ConfigGenerator from './components/ConfigGenerator.vue'
@@ -58,6 +59,11 @@ const routes = [
                         component: DeviceManagement,
                     }
                 ]
+            },
+            {
+                path: 'agents',
+                name: 'agents',
+                component: Agents,
             },
         ]
     },

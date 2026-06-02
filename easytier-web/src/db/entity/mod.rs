@@ -13,3 +13,4 @@ pub mod user_running_network_configs;
 pub mod users;
 pub mod users_groups;
 pub mod ip_whitelist;
+pub mod agent_node;

@@ -9,3 +9,4 @@ pub use super::user_running_network_configs::Entity as UserRunningNetworkConfigs
 pub use super::users::Entity as Users;
 pub use super::users_groups::Entity as UsersGroups;
 pub use super::ip_whitelist::Entity as IpWhitelist;
+pub use super::agent_node::Entity as AgentNodes;

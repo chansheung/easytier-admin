@@ -252,6 +252,7 @@ web:
     language: Language
     change_password: Change Password
     ipwhitelist: IP Whitelist
+    agents: Agent Nodes
 
   ipwhitelist:
     title: IP Whitelist
@@ -267,6 +268,20 @@ web:
     empty: No whitelist entries
     ip_placeholder: Enter IP address
     comment_placeholder: Enter comment (optional)
+
+  agents:
+    title: Agent Node Management
+    add: Add Agent
+    name: Name
+    virtual_ip: Virtual IP
+    description: Description
+    last_sync_at: Last Sync
+    last_sync_status: Sync Status
+    actions: Actions
+    delete: Delete
+    empty: No agent nodes
+    name_placeholder: Enter agent name
+    description_placeholder: Enter description (optional)
 
   device:
     list: Device List

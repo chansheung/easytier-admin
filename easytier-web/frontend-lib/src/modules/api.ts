@@ -183,6 +183,21 @@ export class ApiClient {
         await this.client.post<any>('/admin/ipwhitelist/unbind', { id });
     }
 
+    public async list_agents(): Promise<Array<any>> {
+        const response = await this.client.get<any, any>('/admin/agents');
+        return response.agents;
+    }
+
+    public async create_agent(name: string, virtual_ip: string, description?: string): Promise<undefined> {
+        await this.client.post<any>('/admin/agents/create', { name, virtual_ip, description });
+    }
+
+    public async delete_agent(id: number): Promise<undefined> {
+        await this.client.post<any>('/admin/agents/delete', { id });
+    }
+
+
+
     public async get_network_config(machine_id: string, inst_id: string): Promise<NetworkConfig> {
         const response = await this.client.get<any, NetworkConfig>(`/machines/${machine_id}/networks/config/${inst_id}`);
         return response;

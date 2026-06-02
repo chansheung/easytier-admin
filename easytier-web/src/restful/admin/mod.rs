@@ -19,6 +19,8 @@ use crate::db::Db;
 mod devices;
 mod ipwhitelist;
 mod peers;
+mod whitelist_export;
+mod agent;
 
 pub const DEFAULT_ADMIN_USERNAME: &str = "admin";
 
@@ -222,11 +224,16 @@ pub fn build_router(client_mgr: Arc<ClientManager>, db: Db) -> Router<Arc<Client
         .route("/api/v1/admin/ipwhitelist/delete", post(ipwhitelist::handle_delete_whitelist))
         .route("/api/v1/admin/ipwhitelist/unbind", post(ipwhitelist::handle_unbind_whitelist))
         .route("/api/v1/admin/peers", get(peers::handle_list_peers))
+        .route("/api/v1/admin/agents", get(agent::handle_list_agents))
+        .route("/api/v1/admin/agents/create", post(agent::handle_create_agent))
+        .route("/api/v1/admin/agents/delete", post(agent::handle_delete_agent))
         .route_layer(middleware::from_fn(auth_middleware));
 
     Router::new()
         .route("/api/v1/admin/login", post(handle_login))
         .route("/api/v1/admin/peers/report", post(peers::handle_report_peers))
+        .route("/api/v1/public/whitelist.json", get(whitelist_export::handle_export_whitelist))
+        .route("/api/v1/public/agents/heartbeat", post(agent::handle_agent_heartbeat))
         .merge(protected)
         .layer(Extension(state))
 }

@@ -252,6 +252,7 @@ web:
     language: 语言
     change_password: 修改密码
     ipwhitelist: IP白名单
+    agents: Agent节点
 
   ipwhitelist:
     title: IP白名单
@@ -267,6 +268,20 @@ web:
     empty: 暂无白名单条目
     ip_placeholder: 输入IP地址
     comment_placeholder: 输入备注（可选）
+
+  agents:
+    title: Agent节点管理
+    add: 添加Agent
+    name: 名称
+    virtual_ip: 虚拟IP
+    description: 描述
+    last_sync_at: 最后同步
+    last_sync_status: 同步状态
+    actions: 操作
+    delete: 删除
+    empty: 暂无agent节点
+    name_placeholder: 输入Agent名称
+    description_placeholder: 输入描述（可选）
 
   device:
     list: 设备列表
