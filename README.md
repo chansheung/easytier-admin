@@ -22,13 +22,13 @@
 
 ### IP 白名单管理
 
-![IP 白名单](eg/ip-whitelist.png)
+![IP 白名单](eg/devices.png)
 
 *IP 白名单管理界面：默认首页，可添加 / 删除白名单 IP，支持主机名绑定与解绑*
 
 ### 设备管理
 
-![设备管理](eg/devices.png)
+![设备管理](eg/ip-whitelist.png)
 
 *设备列表：展示已通过白名单接入的设备，包含机器 ID、主机名、虚拟 IP 和在线状态*
 
