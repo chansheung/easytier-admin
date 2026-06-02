@@ -301,6 +301,10 @@ impl Instance {
             } else {
                 global_ctx.set_ip_hostname_auto_file("/tmp/ip_hostname_auto.json".to_string());
             }
+            if let Ok(blocked_file) = std::env::var("BLOCKED_PEERS_FILE") {
+                global_ctx.set_blocked_peers_file(blocked_file);
+            }
+            global_ctx.load_blocked_peers_from_file();
             let ctx = global_ctx.clone();
             let pm = peer_manager.clone();
             let ev_ctx = global_ctx.clone();
@@ -317,9 +321,6 @@ impl Instance {
                     for route in &routes {
                         let ip_str = route.ipv4_addr.as_ref().and_then(|ip| ip.address.as_ref()).map(|a| format!("{}", a));
                         println!("[WHITELIST_DEBUG] route peer_id={}, ipv4={:?}", route.peer_id, ip_str);
-                    }
-                    if whitelist.is_empty() {
-                        continue;
                     }
                     let mut allowed_peers = Vec::new();
                     for route in &routes {
@@ -386,9 +387,6 @@ impl Instance {
                             tokio::spawn(async move {
                                 let whitelist = ctx.load_ip_whitelist();
                                 tracing::info!("Event-driven: whitelist has {} entries", whitelist.len());
-                                if whitelist.is_empty() {
-                                    return;
-                                }
                                 for iteration in 0..120 {
                                     tokio::time::sleep(Duration::from_secs(1)).await;
                                     if iteration % 30 == 0 {

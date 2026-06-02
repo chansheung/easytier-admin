@@ -104,6 +104,7 @@ pub struct GlobalCtx {
 
     ip_whitelist_file: Mutex<Option<String>>,
     ip_hostname_auto_file: Mutex<Option<String>>,
+    blocked_peers_file: Mutex<Option<String>>,
     blocked_peers: DashSet<PeerId>,
 }
 
@@ -196,6 +197,7 @@ impl GlobalCtx {
             extra_secrets_file: Mutex::new(None),
             ip_whitelist_file: Mutex::new(None),
             ip_hostname_auto_file: Mutex::new(None),
+            blocked_peers_file: Mutex::new(None),
             blocked_peers: DashSet::new(),
         }
     }
@@ -458,6 +460,41 @@ impl GlobalCtx {
         *self.ip_hostname_auto_file.lock().unwrap() = Some(path);
     }
 
+    pub fn set_blocked_peers_file(&self, path: String) {
+        *self.blocked_peers_file.lock().unwrap() = Some(path);
+    }
+
+    fn save_blocked_peers(&self) {
+        let path = self.blocked_peers_file.lock().unwrap().clone();
+        let path = match path {
+            Some(p) => p,
+            None => return,
+        };
+        let peers: Vec<u32> = self.blocked_peers.iter().map(|p| *p).collect();
+        if let Ok(content) = serde_json::to_string(&peers) {
+            let _ = std::fs::write(&path, content);
+        }
+    }
+
+    pub fn load_blocked_peers_from_file(&self) {
+        let path = self.blocked_peers_file.lock().unwrap().clone();
+        let path = match path {
+            Some(p) => p,
+            None => return,
+        };
+        let content = match std::fs::read_to_string(&path) {
+            Ok(c) => c,
+            Err(_) => return,
+        };
+        let peers: Vec<u32> = match serde_json::from_str(&content) {
+            Ok(p) => p,
+            Err(_) => return,
+        };
+        for peer_id in peers {
+            self.blocked_peers.insert(peer_id);
+        }
+    }
+
     pub fn bind_hostname(&self, ip: &str, hostname: &str) {
         if hostname.is_empty() {
             println!("[BIND_DEBUG] bind_hostname called with empty hostname for IP {}, skipping", ip);
@@ -507,10 +544,12 @@ impl GlobalCtx {
 
     pub fn block_peer(&self, peer_id: PeerId) {
         self.blocked_peers.insert(peer_id);
+        self.save_blocked_peers();
     }
 
     pub fn unblock_peer(&self, peer_id: PeerId) {
         self.blocked_peers.remove(&peer_id);
+        self.save_blocked_peers();
     }
 
     pub fn is_peer_blocked(&self, peer_id: PeerId) -> bool {
@@ -519,6 +558,7 @@ impl GlobalCtx {
 
     pub fn clear_blocked_peers(&self) {
         self.blocked_peers.clear();
+        self.save_blocked_peers();
     }
 
     pub fn get_acl_groups(&self, peer_id: PeerId) -> Vec<PeerGroupInfo> {
