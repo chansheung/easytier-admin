@@ -2,7 +2,7 @@
 
 ## 项目简介
 
-本项目是 [EasyTier](https://github.com/EasyTier/EasyTier) 的二次发行版，将 `easytier-core`（VPN 组网核心）与 `easytier-web`（管理后台）打包为单一 Docker 镜像，开箱即用。
+本项目是 [EasyTier](https://github.com/EasyTier/EasyTier) （v2.4.5）的二次发行版，将 `easytier-core`（VPN 组网核心）与 `easytier-web`（管理后台）打包为单一 Docker 镜像，开箱即用。
 
 与官方镜像相比，本镜像额外提供了一个**自定义 Admin UI**（`admin-frontend/index.html`），内置 IP 白名单、设备管理、登录鉴权等功能，适合需要精细化访问控制的部署场景。
 
@@ -15,7 +15,6 @@
 - **IP 白名单机制**：仅允许指定 IP 的客户端建立连接，详见下文
 - **设备管理**：实时查看在线设备、系统/版本、心跳时间
 - **登录鉴权**：管理员账号 + JWT Token 认证
-- **容器时区**：已设为 `Asia/Shanghai`，Admin UI 中所有时间均为北京时间
 - **多阶段构建**：Rust 编译 + pnpm 前端构建 + rust_embed 静态资源嵌入
 
 ## 截图示例
