@@ -119,6 +119,34 @@ docker run -d --restart=always --privileged \
 | `-v .../data` | 持久化数据库和运行时数据 |
 | `-e ET_ADMIN_PASSWORD` | Admin 管理员密码，**请务必修改** |
 | `-e ET_ADMIN_SECRET` | JWT 签名密钥，建议设置（默认值为 `change-me-to-a-random-string`，不安全） |
+### core.toml 示例
+
+`core.toml` 是 easytier-core 的主配置文件，挂载到容器的 `/etc/easytier/core.toml`。最简配置示例：
+
+```toml
+ipv4 = "10.0.10.1/24"
+listeners = [
+    "tcp://0.0.0.0:22022",
+    "udp://0.0.0.0:22022",
+]
+
+[network_identity]
+network_name = "my-network"
+network_secret = "change-me-to-a-random-string"
+
+[flags]
+private_mode = true
+```
+
+字段说明：
+
+- `ipv4` — 本节点在虚拟网络中的 IP 与子网长度（同子网内的客户端可以直接互通）
+- `listeners` — easytier-core 监听的协议与端口，客户端通过这些地址连接
+- `network_name` — 虚拟网络名称，同一网络的节点必须一致
+- `network_secret` — 虚拟网络密钥（用于加密通信），请改成强随机字符串
+- `private_mode` — 私有模式（默认不向外转发非本网络流量）
+
+更多字段（如 `peers` 主动连接的节点、`rpc_portal` 管理 API 端口等）请参考 [easytier 官方文档](https://github.com/EasyTier/easytier)。
 
 启动后访问 Admin UI：`http://<your-server-ip>:11211/admin`
 
