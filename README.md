@@ -255,6 +255,7 @@ private_mode = true
 6. **先封禁后跳过连接清理导致存活连接残留**：当事件驱动任务先封禁 peer 后，定时任务因检测到 peer 已 blocked 而跳过关闭连接的操作，导致已建立的 UDP 隧道残留，非白名单设备仍能访问其他节点。现已修复为无论 peer 是否已标记 blocked，始终尝试关闭所有剩余连接。
 7. **admin 自身 IP 静默插入失败**：`entrypoint.sh` 的 `INSERT OR IGNORE` 缺少 NOT NULL 字段 `created_by`/`created_at`，导致 admin 自身 IP 无法写入白名单。agent 每 30 秒发现 admin IP 无 hostname，反复触发 `[BIND_DEBUG] auto-bound hostname` 日志。现已补全字段。
 8. **close_peer_conn 使用默认连接 ID 导致关闭静默失败**：peer 有多连接时 `default_conn_id` 被后台任务清零为全零，`close_peer_conn(零ID)` 静默跳过。现已改用 `close_peer` 直接移除整个 peer。
+9. **admin 容器重启重复插入自身 IP 到白名单**：`ip_whitelist` 表主键是自增 `id`（非 `ip`），`INSERT OR IGNORE` 只在主键冲突时跳过，每次重启都插入新行。修复：INSERT 前先 SELECT 检查 IP 是否已存在，已存在则跳过 INSERT。
 
 #### 删除
 
