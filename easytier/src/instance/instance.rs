@@ -336,10 +336,10 @@ impl Instance {
                                             let peer_id = route.peer_id;
                                             if !ctx.is_peer_blocked(peer_id) {
                                                 ctx.block_peer(peer_id);
-                                                if let Some(conn_id) = pm.get_peer_map().get_peer_default_conn_id(peer_id).await {
-                                                    let _ = pm.close_peer_conn(peer_id, &conn_id).await;
-                                                    tracing::info!("Disconnected peer {}: IP {} hostname '{}' doesn't match bound '{}'", peer_id, ip, route.hostname, bound_hostname);
-                                                }
+                                                let _ = pm.get_peer_map().close_peer(peer_id).await;
+                                                tracing::info!("Disconnected peer {}: IP {} hostname '{}' doesn't match bound '{}'", peer_id, ip, route.hostname, bound_hostname);
+
+
                                             }
                                         } else {
                                             allowed_peers.push(route.peer_id);
@@ -360,10 +360,10 @@ impl Instance {
                                 if !ctx.is_peer_blocked(peer_id) {
                                     ctx.block_peer(peer_id);
                                 }
-                                if let Some(conn_id) = pm.get_peer_map().get_peer_default_conn_id(peer_id).await {
-                                    let _ = pm.close_peer_conn(peer_id, &conn_id).await;
-                                    tracing::info!("Disconnected peer {}: IP {} not in whitelist", peer_id, ip);
-                                }
+                                let _ = pm.get_peer_map().close_peer(peer_id).await;
+                                tracing::info!("Disconnected peer {}: IP {} not in whitelist", peer_id, ip);
+
+
                             }
                         }
                     }
@@ -406,10 +406,10 @@ impl Instance {
                                                             if peer_hostname != bound_hostname.as_str() {
                                                                 if !ctx.is_peer_blocked(peer_id) {
                                                                     ctx.block_peer(peer_id);
-                                                                    if let Some(conn_id) = pm.get_peer_map().get_peer_default_conn_id(peer_id).await {
-                                                                        let _ = pm.close_peer_conn(peer_id, &conn_id).await;
-                                                                        tracing::info!("Event-driven: disconnected peer {}: IP {} hostname '{}' doesn't match bound '{}'", peer_id, ip_str, peer_hostname, bound_hostname);
-                                                                    }
+                                                                    let _ = pm.get_peer_map().close_peer(peer_id).await;
+                                                                    tracing::info!("Event-driven: disconnected peer {}: IP {} hostname '{}' doesn't match bound '{}'", peer_id, ip_str, peer_hostname, bound_hostname);
+
+
                                                                 }
                                                             } else {
                                                                 if ctx.is_peer_blocked(peer_id) {
@@ -433,10 +433,10 @@ impl Instance {
                                                     if !ctx.is_peer_blocked(peer_id) {
                                                         ctx.block_peer(peer_id);
                                                     }
-                                                    if let Some(conn_id) = pm.get_peer_map().get_peer_default_conn_id(peer_id).await {
-                                                        let _ = pm.close_peer_conn(peer_id, &conn_id).await;
-                                                        tracing::info!("Event-driven: disconnected peer {}: IP {} not in whitelist", peer_id, ip_str);
-                                                    }
+                                                    let _ = pm.get_peer_map().close_peer(peer_id).await;
+                                                    tracing::info!("Event-driven: disconnected peer {}: IP {} not in whitelist", peer_id, ip_str);
+
+
                                                     return;
                                                 }
                                             } else {

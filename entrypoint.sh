@@ -20,6 +20,22 @@ echo "Starting easytier-admin..."
 easytier-admin --db "$DB_PATH" --web-server-port 11211 -p tcp &
 ADMIN_PID=$!
 
+if [ -f "$CORE_CONFIG" ]; then
+    ADMIN_IP=$(grep -E '^[[:space:]]*ipv4[[:space:]]*=' "$CORE_CONFIG" | \
+        sed -E 's/^[[:space:]]*ipv4[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/' | \
+        cut -d'/' -f1)
+    HOSTNAME_VAL=$(hostname 2>/dev/null || echo "admin")
+    if [ -n "$ADMIN_IP" ]; then
+        echo "[entrypoint] auto-adding admin self ($ADMIN_IP) to whitelist with hostname=$HOSTNAME_VAL"
+        sqlite3 "$DB_PATH" \
+            "INSERT OR IGNORE INTO ip_whitelist (ip, hostname, comment, created_by, created_at) VALUES ('$ADMIN_IP', '$HOSTNAME_VAL', 'auto', 'entrypoint', datetime('now'))" \
+            2>/dev/null || true
+        sqlite3 "$DB_PATH" \
+            "UPDATE ip_whitelist SET hostname='$HOSTNAME_VAL' WHERE ip='$ADMIN_IP' AND hostname IS NULL" \
+            2>/dev/null || true
+    fi
+fi
+
 echo "Starting secret sync..."
 while true; do
     sqlite3 "$DB_PATH" \

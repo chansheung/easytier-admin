@@ -5,7 +5,7 @@ set -e
 : "${IP_WHITELIST_FILE:=/data/ip_whitelist.json}"
 : "${WHITELIST_SYNC_INTERVAL:=30}"
 : "${CORE_CONFIG:=/etc/easytier/core.toml}"
-: "${RUST_LOG:=easytier=warn}"
+: "${RUST_LOG:=easytier=error}"
 export RUST_LOG
 export IP_WHITELIST_FILE
 export WHITELIST_SYNC_INTERVAL

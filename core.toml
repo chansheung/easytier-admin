@@ -1,0 +1,15 @@
+ipv4 = "10.0.10.1/24"
+listeners = [
+    "tcp://0.0.0.0:22022",
+    "udp://0.0.0.0:22022",
+]
+rpc_portal = "0.0.0.0:0"
+tcp_whitelist = []
+udp_whitelist = []
+
+[network_identity]
+network_name = "cph"
+network_secret = "admincph"
+
+[flags]
+private_mode = true

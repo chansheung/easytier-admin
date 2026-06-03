@@ -253,6 +253,8 @@ private_mode = true
 5. **自动绑定文件持久化导致离线设备重新绑定**：自动绑定文件 `/tmp/ip_hostname_auto.json` 未及时清理，导致已断开连接的设备被反复绑定。现已改为处理后立即删除文件，由核心根据设备在线状态决定是否重建。
 
 6. **先封禁后跳过连接清理导致存活连接残留**：当事件驱动任务先封禁 peer 后，定时任务因检测到 peer 已 blocked 而跳过关闭连接的操作，导致已建立的 UDP 隧道残留，非白名单设备仍能访问其他节点。现已修复为无论 peer 是否已标记 blocked，始终尝试关闭所有剩余连接。
+7. **admin 自身 IP 静默插入失败**：`entrypoint.sh` 的 `INSERT OR IGNORE` 缺少 NOT NULL 字段 `created_by`/`created_at`，导致 admin 自身 IP 无法写入白名单。agent 每 30 秒发现 admin IP 无 hostname，反复触发 `[BIND_DEBUG] auto-bound hostname` 日志。现已补全字段。
+8. **close_peer_conn 使用默认连接 ID 导致关闭静默失败**：peer 有多连接时 `default_conn_id` 被后台任务清零为全零，`close_peer_conn(零ID)` 静默跳过。现已改用 `close_peer` 直接移除整个 peer。
 
 #### 删除
 
@@ -272,6 +274,7 @@ EasyTier 的 IP 白名单实际生效在**网络连接建立时**，由 `easytie
 - 当任意 peer 尝试建立连接时，`easytier-core` 检查对方虚拟 IP 是否在白名单内
 - 命中白名单 → 正常握手；未命中 → 拒绝握手并记录日志
 - 定时任务（每 30 秒）会检测已连接的非白名单设备并主动断开
+- admin 容器启动时 entrypoint.sh 自动从 core.toml 读取自身 IP，INSERT OR IGNORE 写入白名单（附带 hostname、created_by、created_at），确保 admin 自身 IP 始终在白名单中，避免 agent 反复触发 auto-bind
 
 #### 注意事项
 
@@ -385,6 +388,7 @@ agent 完整启动流程：
 | `WHITELIST_SYNC_INTERVAL` | `30` | 拉取间隔（秒）|
 | `WHITELIST_DEFAULT_IPS` | 自动检测 | 预置白名单的 IP 列表（逗号分隔），默认从 core.toml 自动算 admin 的 `.1` 后缀 |
 | `CORE_CONFIG` | `/etc/easytier/core.toml` | core 配置文件路径 |
+| `RUST_LOG` | `easytier=error` | tracing 日志级别，只输出 ERROR；Format 2 日志（`[uuid] message`）不受此影响 |
 
 ### 构建与启动
 
@@ -528,6 +532,9 @@ A: `easytier-core` 需要创建 TUN 网络设备，这需要特权模式。
 
 **Q: agent 无法同步白名单怎么办？**
 A: 检查 `WHITELIST_SYNC_URL` 是否正确、admin 是否可达。admin 失联时 agent 会使用最后一次同步的白名单，不会放行新设备。
+
+**Q: 日志中反复出现 `[BIND_DEBUG] auto-bound hostname` 是什么意思？**
+A: 表示某白名单条目的 hostname 为空，核心自动将当前连接设备的主机名绑定到该 IP。如果 admin 自身 IP（如 10.0.10.1）每 30 秒出现此日志，说明 admin 启动时未成功写入自身白名单条目。请检查容器启动日志中是否有 SQLite 错误。
 
 ## 许可与致谢
 
