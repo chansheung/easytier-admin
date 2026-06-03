@@ -26,10 +26,15 @@ if [ -f "$CORE_CONFIG" ]; then
         cut -d'/' -f1)
     HOSTNAME_VAL=$(hostname 2>/dev/null || echo "admin")
     if [ -n "$ADMIN_IP" ]; then
-        echo "[entrypoint] auto-adding admin self ($ADMIN_IP) to whitelist with hostname=$HOSTNAME_VAL"
-        sqlite3 "$DB_PATH" \
-            "INSERT OR IGNORE INTO ip_whitelist (ip, hostname, comment, created_by, created_at) VALUES ('$ADMIN_IP', '$HOSTNAME_VAL', 'auto', 'entrypoint', datetime('now'))" \
-            2>/dev/null || true
+        EXISTING=$(sqlite3 "$DB_PATH" "SELECT hostname FROM ip_whitelist WHERE ip='$ADMIN_IP' LIMIT 1;" 2>/dev/null)
+        if [ -n "$EXISTING" ]; then
+            echo "[entrypoint] admin IP $ADMIN_IP already in whitelist (hostname=$EXISTING), skipping insert"
+        else
+            echo "[entrypoint] auto-adding admin self ($ADMIN_IP) to whitelist with hostname=$HOSTNAME_VAL"
+            sqlite3 "$DB_PATH" \
+                "INSERT OR IGNORE INTO ip_whitelist (ip, hostname, comment, created_by, created_at) VALUES ('$ADMIN_IP', '$HOSTNAME_VAL', 'auto', 'entrypoint', datetime('now'))" \
+                2>/dev/null || true
+        fi
         sqlite3 "$DB_PATH" \
             "UPDATE ip_whitelist SET hostname='$HOSTNAME_VAL' WHERE ip='$ADMIN_IP' AND hostname IS NULL" \
             2>/dev/null || true
