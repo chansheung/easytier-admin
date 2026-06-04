@@ -1,0 +1,68 @@
+{
+  "nodes": [
+    {"id": "log:analyst-172d244ad", "label": "analyst session 172d244ad", "file_type": "document", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"agent": "analyst", "status": "done", "timestamp": "2026-06-03T11:11:16.394Z", "file": ".flowcraft/logs/analyst-ses_172d244adffeR0cIzKI9fpH7hk-2026-06-03T11-11-16-394Z.summary.md"}},
+    {"id": "log:coder-16f8ec63", "label": "coder session 16f8ec63 (graphify setup)", "file_type": "document", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"agent": "coder", "status": "done", "timestamp": "2026-06-04T02:26:23.010Z", "file": ".flowcraft/logs/coder-ses_16f8ec635ffeKggxHBL2JkLE2I-2026-06-04T02-26-23-010Z.summary.md"}},
+    {"id": "log:coder-172703af", "label": "coder session 172703af (remote investigation)", "file_type": "document", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"agent": "coder", "status": "done", "timestamp": "2026-06-03T13:00:01.199Z", "file": ".flowcraft/logs/coder-ses_172703afeffeDX4vaJ5majuU6S-2026-06-03T13-00-01-199Z.summary.md"}},
+    {"id": "log:coder-172a053e", "label": "coder session 172a053e (entrypoint rewrite)", "file_type": "document", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"agent": "coder", "status": "done", "timestamp": "2026-06-03T12:05:49.613Z", "file": ".flowcraft/logs/coder-ses_172a053e2ffefhkghG2wOg4Sm7-2026-06-03T12-05-49-613Z.summary.md"}},
+    {"id": "log:coder-172c2077", "label": "coder session 172c2077 (close_peer refactor)", "file_type": "document", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"agent": "coder", "status": "done", "timestamp": "2026-06-03T11:32:07.279Z", "file": ".flowcraft/logs/coder-ses_172c20779ffeT3xvr4uKOOKKTZ-2026-06-03T11-32-07-279Z.summary.md"}},
+    {"id": "log:coder-172ca1b0", "label": "coder session 172ca1b0 (RUST_LOG change)", "file_type": "document", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"agent": "coder", "status": "done", "timestamp": "2026-06-03T11:19:52.225Z", "file": ".flowcraft/logs/coder-ses_172ca1b0affeA0PFueRNJcZl7G-2026-06-03T11-19-52-225Z.md"}},
+    {"id": "file:entrypoint.sh", "label": "entrypoint.sh", "file_type": "code", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"path": "entrypoint.sh", "role": "admin container startup script"}},
+    {"id": "file:agent-entrypoint.sh", "label": "agent-entrypoint.sh", "file_type": "code", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"path": "easytier/scripts/agent-entrypoint.sh", "role": "agent container startup script"}},
+    {"id": "file:peer_map.rs", "label": "peer_map.rs", "file_type": "code", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"path": "easytier/src/peer_map.rs", "role": "peer connection management"}},
+    {"id": "file:utils.rs", "label": "utils.rs", "file_type": "code", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"path": "easytier/src/utils.rs", "role": "logging utility (console_layer)"}},
+    {"id": "concept:ip_whitelist", "label": "IP whitelist system", "file_type": "document", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"storage": "sqlite3", "format": "JSON file", "sync_interval": "30s", "related_table": "ip_whitelist (ip, hostname, comment, created_by, created_at)"}},
+    {"id": "concept:close_peer_refactor", "label": "close_peer vs close_peer_conn refactor", "file_type": "document", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"replaced": "close_peer_conn", "replacement": "close_peer", "locations": "peer_map.rs lines 339, 363, 409, 436", "triggers": "hostname mismatch, not in whitelist"}},
+    {"id": "concept:easytier-deployment", "label": "EasyTier deployment (chan instance)", "file_type": "document", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"version": "2.4.5-4c4d172e", "instance_name": "chan", "network": "gdasgig210", "ipv4": "10.0.210.19/24", "host": "ubuntu210@172.30.0.10", "peers_connected": 14, "systemd_service": "easytier@default.service"}},
+    {"id": "concept:graphify-toolchain", "label": "Graphify toolchain setup", "file_type": "document", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"version": "0.8.28", "python": "/home/cph/.local/share/uv/tools/graphifyy/bin/python3", "installed_via": "uv tool"}},
+    {"id": "concept:RUST_LOG", "label": "RUST_LOG env var (log level)", "file_type": "document", "source": "EXTRACTED", "confidence_score": 1.0, "properties": {"old_default": "easytier=warn", "new_default": "easytier=error"}}
+  ],
+  "edges": [
+    {"source": "log:analyst-172d244ad", "target": "file:entrypoint.sh", "label": "analyzed", "source_type": "EXTRACTED", "confidence_score": 1.0, "properties": {"task": "propose auto-adding admin IP to whitelist via INSERT OR IGNORE"}},
+    {"source": "log:analyst-172d244ad", "target": "file:utils.rs", "label": "analyzed", "source_type": "EXTRACTED", "confidence_score": 1.0, "properties": {"task": "propose replacing with_timer() with without_time() for console_layer"}},
+    {"source": "log:analyst-172d244ad", "target": "concept:ip_whitelist", "label": "proposes_fix_for", "source_type": "INFERRED", "confidence_score": 0.8, "properties": {"detail": "analyst proposed sqlite3 INSERT OR IGNORE before sync loop"}},
+    {"source": "log:coder-16f8ec63", "target": "concept:graphify-toolchain", "label": "configured", "source_type": "EXTRACTED", "confidence_score": 1.0, "properties": {"detail": "wrote .graphify_python file with correct interpreter path"}},
+    {"source": "log:coder-172703af", "target": "concept:easytier-deployment", "label": "investigated", "source_type": "EXTRACTED", "confidence_score": 1.0, "properties": {"detail": "SSH to ubuntu210@172.30.0.10, inspected binary, config, peers, systemd"}},
+    {"source": "log:coder-172a053e", "target": "file:entrypoint.sh", "label": "modified", "source_type": "EXTRACTED", "confidence_score": 1.0, "properties": {"task": "rewrote entrypoint with INSERT including comment/created_by/created_at + UPDATE for NULL hostname fix"}},
+    {"source": "log:coder-172a053e", "target": "concept:ip_whitelist", "label": "enhanced", "source_type": "EXTRACTED", "confidence_score": 1.0, "properties": {"detail": "added comment, created_by, created_at fields to INSERT; UPDATE for NULL hostname"}},
+    {"source": "log:coder-172c2077", "target": "file:peer_map.rs", "label": "modified", "source_type": "EXTRACTED", "confidence_score": 1.0, "properties": {"task": "replaced close_peer_conn with close_peer at 4 locations"}},
+    {"source": "log:coder-172c2077", "target": "concept:close_peer_refactor", "label": "implemented", "source_type": "EXTRACTED", "confidence_score": 1.0},
+    {"source": "log:coder-172ca1b0", "target": "file:agent-entrypoint.sh", "label": "modified", "source_type": "EXTRACTED", "confidence_score": 1.0, "properties": {"task": "changed RUST_LOG default from easytier=warn to easytier=error at line 8"}},
+    {"source": "log:coder-172ca1b0", "target": "concept:RUST_LOG", "label": "changed_default_of", "source_type": "EXTRACTED", "confidence_score": 1.0},
+    {"source": "concept:ip_whitelist", "target": "file:entrypoint.sh", "label": "managed_by", "source_type": "EXTRACTED", "confidence_score": 0.9},
+    {"source": "concept:ip_whitelist", "target": "file:agent-entrypoint.sh", "label": "synced_by", "source_type": "EXTRACTED", "confidence_score": 0.8, "properties": {"sync_url_env": "WHITELIST_SYNC_URL", "sync_interval_env": "WHITELIST_SYNC_INTERVAL"}},
+    {"source": "concept:close_peer_refactor", "target": "file:peer_map.rs", "label": "defined_in", "source_type": "EXTRACTED", "confidence_score": 1.0},
+    {"source": "concept:easytier-deployment", "target": "file:entrypoint.sh", "label": "uses", "source_type": "INFERRED", "confidence_score": 0.6, "properties": {"detail": "deployment runs easytier-core which entrypoint.sh configures"}},
+    {"source": "log:coder-172a053e", "target": "log:analyst-172d244ad", "label": "implements_analysis_from", "source_type": "INFERRED", "confidence_score": 0.7, "properties": {"detail": "coder implemented the analyst's proposed fix for entrypoint.sh whitelist"}}
+  ],
+  "hyperedges": [
+    {
+      "id": "he:whitelist_fix_pipeline",
+      "label": "IP whitelist fix pipeline (analyst → coder)",
+      "nodes": ["log:analyst-172d244ad", "log:coder-172a053e", "file:entrypoint.sh", "concept:ip_whitelist"],
+      "edges": ["log:analyst-172d244ad->file:entrypoint.sh", "log:coder-172a053e->file:entrypoint.sh", "log:coder-172a053e->log:analyst-172d244ad"],
+      "source_type": "INFERRED",
+      "confidence_score": 0.7,
+      "properties": {"description": "Analyst proposed auto-adding admin IP to ip_whitelist via sqlite3 INSERT OR IGNORE; coder implemented enhanced version with comment/created_by/created_at fields and NULL hostname UPDATE fix"}
+    },
+    {
+      "id": "he:peer_disconnect_enforcement",
+      "label": "Peer disconnect enforcement via close_peer",
+      "nodes": ["log:coder-172c2077", "file:peer_map.rs", "concept:close_peer_refactor", "concept:ip_whitelist"],
+      "edges": ["log:coder-172c2077->file:peer_map.rs", "log:coder-172c2077->concept:close_peer_refactor", "concept:close_peer_refactor->file:peer_map.rs"],
+      "source_type": "INFERRED",
+      "confidence_score": 0.7,
+      "properties": {"description": "Replaced close_peer_conn with close_peer in 4 locations (periodic+event-driven, hostname mismatch+not in whitelist) to properly disconnect peers that violate whitelist or hostname policies"}
+    },
+    {
+      "id": "he:agent_logging_tuning",
+      "label": "Agent log level tuning",
+      "nodes": ["log:coder-172ca1b0", "file:agent-entrypoint.sh", "concept:RUST_LOG"],
+      "edges": ["log:coder-172ca1b0->file:agent-entrypoint.sh", "log:coder-172ca1b0->concept:RUST_LOG"],
+      "source_type": "EXTRACTED",
+      "confidence_score": 1.0,
+      "properties": {"description": "Changed agent container default log level from warn to error to reduce log noise in agent deployments"}
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

@@ -8,8 +8,8 @@ tcp_whitelist = []
 udp_whitelist = []
 
 [network_identity]
-network_name = "cph"
-network_secret = "admincph"
+network_name = "change-me"
+network_secret = "change-me-to-a-random-string"
 
 [flags]
 private_mode = true

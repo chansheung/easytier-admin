@@ -16,7 +16,7 @@ services:
       - ./config/core.toml:/etc/easytier/core.toml:ro
       - agent-data:/data
     environment:
-      - WHITELIST_SYNC_URL=http://10.0.10.1:11211/api/v1/public/whitelist.json
+      - WHITELIST_SYNC_URL=http://<admin-virtual-ip>:11211/api/v1/public/whitelist.json
       - IP_WHITELIST_FILE=/data/ip_whitelist.json
       - WHITELIST_SYNC_INTERVAL=30
       - RUST_LOG=info
