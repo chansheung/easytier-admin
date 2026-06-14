@@ -526,8 +526,9 @@ A: 表示某白名单条目的 hostname 为空，核心自动将当前连接设�
 8. **close_peer_conn 使用默认连接 ID 导致关闭静默失败**：peer 有多连接时 `default_conn_id` 被后台任务清零为全零，`close_peer_conn(零ID)` 静默跳过。现已改用 `close_peer` 直接移除整个 peer。
 9. **admin 容器重启重复插入自身 IP 到白名单**：`ip_whitelist` 表主键是自增 `id`（非 `ip`），`INSERT OR IGNORE` 只在主键冲突时跳过，每次重启都插入新行。修复：INSERT 前先 SELECT 检查 IP 是否已存在，已存在则跳过 INSERT。
 
-## 许可与致谢
+10. **agent 镜像 EXPOSE 22020 死声明误导多容器端口显示**：`agent.Dockerfile` 声明了 `EXPOSE 22020`，但 agent 容器仅运行 `easytier-core`（监听 `core.toml` 配置的端口，如 22022 / 11010 / 21010），22020 从未被任何进程监听。配合 `--network host` 模式，`docker ps` 会照搬镜像元数据，使每个 agent 容器都显示 22020，造成「多 agent 容器端口冲突」的误导。修复：从 `agent.Dockerfile` 移除 `EXPOSE 22020`。注：admin 镜像（`Dockerfile`）保留 `EXPOSE 11211 22020`，因其 `easytier-admin` 进程确实在 22020 上监听 config-server tunnel 连接。
 
+## 许可与致谢
 本项目基于 [EasyTier](https://github.com/EasyTier/EasyTier) 进行二次开发，遵循上游 [LGPL-3.0](LICENSE) 许可证。
 
 感谢 EasyTier 开源社区提供的优秀组网方案。

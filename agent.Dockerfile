@@ -34,5 +34,5 @@ COPY --from=builder /app/easytier/scripts/agent-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 VOLUME ["/data"]
-EXPOSE 22020
+
 CMD ["/entrypoint.sh"]
