@@ -7,6 +7,8 @@ use std::time::Duration;
 
 use anyhow::Context;
 use cidr::{IpCidr, Ipv4Inet};
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
 
 use futures::FutureExt;
 use tokio::sync::{oneshot, Notify};
@@ -32,7 +34,7 @@ use crate::peers::peer_conn::PeerConnId;
 use crate::peers::peer_manager::{PeerManager, RouteAlgoType};
 use crate::peers::rpc_service::PeerManagerRpcService;
 use crate::peers::{create_packet_recv_chan, recv_packet_from_chan, PacketRecvChanReceiver};
-use crate::proto::cli::VpnPortalRpc;
+use crate::proto::cli::{VpnPortalRpc, list_peer_route_pair};
 use crate::proto::cli::{
     AddPortForwardRequest, AddPortForwardResponse, GetPrometheusStatsRequest,
     GetPrometheusStatsResponse, GetStatsRequest, GetStatsResponse, ListMappedListenerRequest,
@@ -467,23 +469,54 @@ impl Instance {
 
         if let Ok(admin_api_url) = std::env::var("ADMIN_API_URL") {
             let pm = peer_manager.clone();
+            let gctx = global_ctx.clone();
             tokio::spawn(async move {
                 let url = format!("{}/api/v1/admin/peers/report", admin_api_url);
                 loop {
                     tokio::time::sleep(std::time::Duration::from_secs(30)).await;
                     let routes = pm.list_routes().await;
-                    let peer_list: Vec<serde_json::Value> = routes.iter().map(|r| {
-                        let ip = r.ipv4_addr.as_ref().and_then(|ip| ip.address.as_ref()).map(|a| format!("{}", a));
-                        serde_json::json!({
-                            "peer_id": r.peer_id,
-                            "ip": ip,
-                            "hostname": if r.hostname.is_empty() { None } else { Some(&r.hostname) },
+                    let peers = PeerManagerRpcService::list_peers(&pm).await;
+                    let pairs = list_peer_route_pair(peers, routes);
+                    let reporter = gctx.get_ipv4().map(|ip| format!("{}", ip));
+                    let peer_list: Vec<serde_json::Value> = pairs
+                        .iter()
+                        .map(|p| {
+                            let route = p.route.as_ref();
+                            let ip = route
+                                .and_then(|r| r.ipv4_addr.as_ref())
+                                .and_then(|ip| ip.address.as_ref())
+                                .map(|a| format!("{}", a));
+                            let hostname = route.map(|r| r.hostname.clone()).unwrap_or_default();
+                            serde_json::json!({
+                                "peer_id": route.map(|r| r.peer_id),
+                                "ip": ip,
+                                "hostname": if hostname.is_empty() { None } else { Some(&hostname) },
+                                "rx_bytes": p.get_rx_bytes(),
+                                "tx_bytes": p.get_tx_bytes(),
+                            })
                         })
-                    }).collect();
-                    let body = serde_json::json!({"peers": peer_list}).to_string();
+                        .collect();
+                    let body = serde_json::json!({
+                        "reporter": reporter,
+                        "peers": peer_list,
+                    })
+                    .to_string();
+
+                    let sig_opt = std::env::var("TRAFFIC_REPORT_SECRET")
+                        .ok()
+                        .map(|secret| {
+                            type HmacSha256 = Hmac<Sha256>;
+                            let mut mac = HmacSha256::new_from_slice(secret.as_bytes())
+                                .expect("HMAC accepts any key length for Sha256");
+                            mac.update(body.as_bytes());
+                            let bytes = mac.finalize().into_bytes();
+                            bytes.iter().map(|b| format!("{:02x}", b)).collect::<String>()
+                        });
+
                     let url_clone = url.clone();
                     let body_clone = body.clone();
                     let count = peer_list.len();
+                    let sig_clone = sig_opt.clone();
                     tokio::task::spawn_blocking(move || {
                         let mut resp = Vec::new();
                         let uri = match http_req::uri::Uri::try_from(url_clone.as_str()) {
@@ -493,20 +526,26 @@ impl Instance {
                                 return;
                             }
                         };
-                        match http_req::request::Request::new(&uri)
-                            .method(http_req::request::Method::POST)
-                            .header("Content-Type", "application/json")
-                            .body(&body_clone.as_bytes())
-                            .send(&mut resp)
-                        {
+                        let mut req = http_req::request::Request::new(&uri);
+                        req.method(http_req::request::Method::POST)
+                            .header("Content-Type", "application/json");
+                        if let Some(sig) = sig_clone.as_deref() {
+                            req.header("X-Report-Sig", sig);
+                        }
+                        match req.body(&body_clone.as_bytes()).send(&mut resp) {
                             Ok(r) => {
-                                tracing::debug!("Reported {} peers to admin, status: {}", count, r.status_code());
+                                tracing::debug!(
+                                    "Reported {} peers to admin, status: {}",
+                                    count,
+                                    r.status_code()
+                                );
                             }
                             Err(e) => {
                                 tracing::warn!("Failed to report peers to admin: {}", e);
                             }
                         }
-                    }).await.ok();
+                    })
+                    .await.ok();
                 }
             });
         }

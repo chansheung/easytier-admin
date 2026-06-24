@@ -21,6 +21,7 @@ mod ipwhitelist;
 mod peers;
 mod whitelist_export;
 mod agent;
+mod traffic;
 
 pub const DEFAULT_ADMIN_USERNAME: &str = "admin";
 
@@ -32,6 +33,8 @@ pub struct AdminState {
     pub admin_password_hash: String,
     pub jwt_secret: Arc<String>,
     pub peer_store: Option<Arc<peers::PeerStore>>,
+    pub traffic_state: Option<Arc<traffic::TrafficState>>,
+    pub traffic_report_secret: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -211,6 +214,8 @@ pub fn build_router(client_mgr: Arc<ClientManager>, db: Db) -> Router<Arc<Client
         admin_password_hash,
         jwt_secret: Arc::new(jwt_secret),
         peer_store: Some(Arc::new(peers::PeerStore::default())),
+        traffic_state: Some(Arc::new(traffic::TrafficState::new())),
+        traffic_report_secret: std::env::var("TRAFFIC_REPORT_SECRET").ok(),
     };
 
     let protected = Router::new()
@@ -227,6 +232,10 @@ pub fn build_router(client_mgr: Arc<ClientManager>, db: Db) -> Router<Arc<Client
         .route("/api/v1/admin/agents", get(agent::handle_list_agents))
         .route("/api/v1/admin/agents/create", post(agent::handle_create_agent))
         .route("/api/v1/admin/agents/delete", post(agent::handle_delete_agent))
+        .route("/api/v1/admin/traffic/quotas", get(traffic::handle_list_quotas))
+        .route("/api/v1/admin/traffic/quotas/set", post(traffic::handle_set_quota))
+        .route("/api/v1/admin/traffic/quotas/delete", post(traffic::handle_delete_quota))
+        .route("/api/v1/admin/traffic/usage", get(traffic::handle_list_usage))
         .route_layer(middleware::from_fn(auth_middleware));
 
     Router::new()

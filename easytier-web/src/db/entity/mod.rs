@@ -14,3 +14,5 @@ pub mod users;
 pub mod users_groups;
 pub mod ip_whitelist;
 pub mod agent_node;
+pub mod traffic_quota;
+pub mod traffic_usage;

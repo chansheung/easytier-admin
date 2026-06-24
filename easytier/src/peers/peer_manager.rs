@@ -666,6 +666,12 @@ impl PeerManager {
         self.tasks.lock().await.spawn(async move {
             tracing::trace!("start_peer_recv");
             while let Ok(ret) = recv_packet_from_chan(&mut recv).await {
+                if let Some(hdr) = ret.peer_manager_header() {
+                    let from_peer_id = hdr.from_peer_id.get();
+                    if from_peer_id != my_peer_id && global_ctx.is_peer_blocked(from_peer_id) {
+                        continue;
+                    }
+                }
                 let Err(mut ret) =
                     Self::try_handle_foreign_network_packet(ret, my_peer_id, &peers, &foreign_mgr)
                         .await

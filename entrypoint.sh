@@ -7,6 +7,8 @@ IP_WHITELIST_FILE=${IP_WHITELIST_FILE:-"/tmp/ip_whitelist.json"}
 IP_HOSTNAME_AUTO_FILE=${IP_HOSTNAME_AUTO_FILE:-"/tmp/ip_hostname_auto.json"}
 BLOCKED_PEERS_FILE=${BLOCKED_PEERS_FILE:-"/tmp/blocked_peers.json"}
 CORE_CONFIG=${CORE_CONFIG:-"/etc/easytier/core.toml"}
+# admin-web receives traffic reports from agents; secret defaults to the JWT secret.
+export TRAFFIC_REPORT_SECRET="${TRAFFIC_REPORT_SECRET:-${ET_ADMIN_SECRET}}"
 
 echo "Starting easytier-core..."
 if [ -f "$CORE_CONFIG" ]; then

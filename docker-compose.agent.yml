@@ -21,6 +21,8 @@ services:
       - WHITELIST_SYNC_INTERVAL=30
       - RUST_LOG=info
       - TZ=Asia/Shanghai
+      - ADMIN_API_URL=http://10.0.10.1:11211
+      - TRAFFIC_REPORT_SECRET=${TRAFFIC_REPORT_SECRET:-easytier-admin-secret-change-me}
 
 volumes:
   agent-data:

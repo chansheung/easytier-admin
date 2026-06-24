@@ -96,6 +96,23 @@ body {
   box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
 }
 
+.form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.form-group select:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+}
+
 .login-error {
   background: rgba(234,67,53,0.08);
   border: 1px solid rgba(234,67,53,0.2);
@@ -515,6 +532,9 @@ tr:hover td { background: rgba(26,115,232,0.03); }
     <div class="sidebar-item" data-tab="devices">
       <span class="icon">💻</span> 设备
     </div>
+    <div class="sidebar-item" data-tab="traffic">
+      <span class="icon">📊</span> 流量配额
+    </div>
   </aside>
 
   <main class="main-content">
@@ -564,6 +584,50 @@ tr:hover td { background: rgba(26,115,232,0.03); }
         </table>
       </div>
     </div>
+
+    <!-- Traffic Tab -->
+    <div class="tab-panel" id="tab-traffic">
+      <div class="panel-header">
+        <h2>流量配额</h2>
+        <button class="btn btn-sm btn-primary" id="create-traffic-quota-btn">＋ 添加配额</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>IP 地址</th>
+              <th>周期</th>
+              <th>限额</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="traffic-quota-body">
+            <tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="panel-header" style="margin-top:24px">
+        <h2>流量用量</h2>
+        <button class="btn btn-sm" id="refresh-traffic-usage">🔄 刷新</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>IP 地址</th>
+              <th>周期</th>
+              <th>时间窗口</th>
+              <th>已用</th>
+              <th>更新时间</th>
+            </tr>
+          </thead>
+          <tbody id="traffic-usage-body">
+            <tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -583,6 +647,41 @@ tr:hover td { background: rgba(26,115,232,0.03); }
     <div class="modal-actions">
       <button class="btn" id="whitelist-cancel">取消</button>
       <button class="btn btn-primary" id="whitelist-submit">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ Traffic Quota Modal ═══════ -->
+<div class="modal-overlay" id="traffic-quota-modal">
+  <div class="modal">
+    <h3>添加流量配额</h3>
+    <div class="form-group">
+      <label>虚拟 IP 地址</label>
+      <input type="text" id="traffic-quota-ip" placeholder="如 10.0.10.5">
+    </div>
+    <div class="form-group">
+      <label>周期类型</label>
+      <select id="traffic-quota-period">
+        <option value="hour">每小时</option>
+        <option value="day" selected>每天</option>
+        <option value="week">每周</option>
+        <option value="month">每月</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>流量限额</label>
+      <div style="display:flex;gap:8px">
+        <input type="number" id="traffic-quota-limit" placeholder="10" style="flex:1" min="0" step="0.1">
+        <select id="traffic-quota-unit" style="width:100px">
+          <option value="mb">MB</option>
+          <option value="gb" selected>GB</option>
+          <option value="tb">TB</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="traffic-quota-cancel">取消</button>
+      <button class="btn btn-primary" id="traffic-quota-submit">确定</button>
     </div>
   </div>
 </div>
@@ -763,6 +862,7 @@ tr:hover td { background: rgba(26,115,232,0.03); }
       $("#tab-" + tab).classList.add("active");
       if (tab === "devices") loadDevices();
       else if (tab === "ipwhitelist") loadWhitelist();
+      else if (tab === "traffic") { loadTrafficQuotas(); loadTrafficUsage(); }
     });
   });
 
@@ -904,6 +1004,136 @@ tr:hover td { background: rgba(26,115,232,0.03); }
       .catch(function(err) { toast(err.message, "error"); })
       .finally(function() { btn.disabled = false; });
   });
+
+  // ── Traffic Quota & Usage ─────────
+  var PERIOD_LABELS = { hour: "每小时", day: "每天", week: "每周", month: "每月" };
+
+  function formatBytes(bytes) {
+    if (!bytes || bytes === 0) return "0 B";
+    var units = ["B", "KB", "MB", "GB", "TB", "PB"];
+    var i = Math.floor(Math.log(bytes) / Math.log(1024));
+    if (i >= units.length) i = units.length - 1;
+    if (i < 0) i = 0;
+    return (bytes / Math.pow(1024, i)).toFixed(2) + " " + units[i];
+  }
+
+  function loadTrafficQuotas() {
+    var tbody = $("#traffic-quota-body");
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+    api("GET", "/api/v1/admin/traffic/quotas")
+      .then(function(data) {
+        var quotas = data.quotas || [];
+        if (!Array.isArray(quotas) || quotas.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty-state">暂无配额配置，点击「添加配额」创建</td></tr>';
+          return;
+        }
+        quotas.sort(function(a, b) { return ipCompare(a.ip, b.ip); });
+        var html = "";
+        quotas.forEach(function(q) {
+          var statusHtml = q.enabled
+            ? '<span class="badge badge-green">启用</span>'
+            : '<span class="badge badge-red">禁用</span>';
+          var actionHtml = '<button class="btn btn-sm btn-danger" data-action="delete-traffic-quota" data-qid="' + escapeHtml(q.id) + '">删除</button>';
+          html += "<tr>"
+            + '<td class="mono">' + escapeHtml(q.ip) + "</td>"
+            + "<td>" + (PERIOD_LABELS[q.period_type] || escapeHtml(q.period_type)) + "</td>"
+            + "<td>" + formatBytes(q.limit_bytes) + "</td>"
+            + "<td>" + statusHtml + "</td>"
+            + "<td>" + actionHtml + "</td>"
+            + "</tr>";
+        });
+        tbody.innerHTML = html;
+      })
+      .catch(function(err) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">' + escapeHtml(err.message) + '</td></tr>';
+      });
+  }
+
+  function loadTrafficUsage() {
+    var tbody = $("#traffic-usage-body");
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+    api("GET", "/api/v1/admin/traffic/usage")
+      .then(function(data) {
+        var usage = data.usage || [];
+        if (!Array.isArray(usage) || usage.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty-state">暂无用量数据</td></tr>';
+          return;
+        }
+        usage.sort(function(a, b) { return ipCompare(a.ip, b.ip); });
+        var html = "";
+        usage.forEach(function(u) {
+          html += "<tr>"
+            + '<td class="mono">' + escapeHtml(u.ip) + "</td>"
+            + "<td>" + (PERIOD_LABELS[u.period_type] || escapeHtml(u.period_type)) + "</td>"
+            + '<td class="mono">' + escapeHtml(u.period_key) + "</td>"
+            + "<td>" + formatBytes(u.bytes) + "</td>"
+            + "<td>" + formatTime(u.updated_at) + "</td>"
+            + "</tr>";
+        });
+        tbody.innerHTML = html;
+      })
+      .catch(function(err) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">' + escapeHtml(err.message) + '</td></tr>';
+      });
+  }
+
+  $("#create-traffic-quota-btn").addEventListener("click", function() {
+    $("#traffic-quota-ip").value = "";
+    $("#traffic-quota-period").value = "day";
+    $("#traffic-quota-limit").value = "";
+    $("#traffic-quota-unit").value = "gb";
+    $("#traffic-quota-modal").classList.add("open");
+    $("#traffic-quota-ip").focus();
+  });
+
+  $("#traffic-quota-cancel").addEventListener("click", function() {
+    $("#traffic-quota-modal").classList.remove("open");
+  });
+
+  $("#traffic-quota-modal").addEventListener("click", function(e) {
+    if (e.target === this) this.classList.remove("open");
+  });
+
+  $("#traffic-quota-submit").addEventListener("click", function() {
+    var ip = $("#traffic-quota-ip").value.trim();
+    var period = $("#traffic-quota-period").value;
+    var limitVal = parseFloat($("#traffic-quota-limit").value);
+    var unit = $("#traffic-quota-unit").value;
+    if (!ip) { toast("请输入 IP 地址", "error"); $("#traffic-quota-ip").focus(); return; }
+    if (isNaN(limitVal) || limitVal <= 0) { toast("请输入有效的限额", "error"); $("#traffic-quota-limit").focus(); return; }
+    var multipliers = { mb: 1048576, gb: 1073741824, tb: 1099511627776 };
+    var limitBytes = Math.floor(limitVal * multipliers[unit]);
+    var btn = this;
+    btn.disabled = true;
+    api("POST", "/api/v1/admin/traffic/quotas/set", {
+      ip: ip, period_type: period, limit_bytes: limitBytes
+    })
+      .then(function() {
+        $("#traffic-quota-modal").classList.remove("open");
+        toast("配额已设置", "success");
+        loadTrafficQuotas();
+      })
+      .catch(function(err) { toast(err.message, "error"); })
+      .finally(function() { btn.disabled = false; });
+  });
+
+  $("#refresh-traffic-usage").addEventListener("click", loadTrafficUsage);
+
+  document.addEventListener("click", function(e) {
+    var delBtn = e.target.closest("button[data-action='delete-traffic-quota']");
+    if (delBtn) {
+      var qid = delBtn.getAttribute("data-qid");
+      if (!confirm("确定要删除此流量配额吗？")) return;
+      delBtn.disabled = true;
+      api("POST", "/api/v1/admin/traffic/quotas/delete", { id: parseInt(qid, 10) })
+        .then(function() {
+          toast("配额已删除", "success");
+          loadTrafficQuotas();
+        })
+        .catch(function(err) { toast(err.message, "error"); delBtn.disabled = false; });
+    }
+  });
+
   // ── Init ───────────────────────────
   init();
 

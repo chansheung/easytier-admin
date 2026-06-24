@@ -6,6 +6,8 @@ mod m20250530_000003_network_secrets;
 mod m20250530_000004_ip_whitelist;
 mod m20250531_000005_ip_whitelist_hostname;
 mod m20250602_000006_agent_nodes;
+mod m20250623_000007_traffic;
+mod m20250623_000008_traffic_indexes;
 pub struct Migrator;
 
 #[async_trait::async_trait]
@@ -18,6 +20,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20250530_000004_ip_whitelist::Migration),
             Box::new(m20250531_000005_ip_whitelist_hostname::Migration),
             Box::new(m20250602_000006_agent_nodes::Migration),
+            Box::new(m20250623_000007_traffic::Migration),
+            Box::new(m20250623_000008_traffic_indexes::Migration),
         ]
     }
 }
