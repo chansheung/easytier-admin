@@ -10,3 +10,4 @@ dist/
 *.swo
 .flowcraft/
 graphify-out/
+release/
