@@ -64,5 +64,20 @@ else
     exit 1
 fi
 
+# Set accept_local=1 on TUN devices for QUIC proxy support
+(for i in $(seq 1 30); do
+    FOUND=0
+    for dev in /proc/sys/net/ipv4/conf/tun*; do
+        [ -d "$dev" ] || continue
+        dev_name=$(basename "$dev")
+        if echo 1 > "$dev/accept_local" 2>/dev/null; then
+            echo "[entrypoint] accept_local=1 set on $dev_name"
+            FOUND=1
+        fi
+    done
+    [ "$FOUND" = "1" ] && break
+    sleep 1
+done) &
+
 trap "echo '[agent] shutting down'; kill $SYNC_PID $CORE_PID 2>/dev/null; wait" SIGTERM SIGINT
 wait
